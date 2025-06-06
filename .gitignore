@@ -281,9 +281,6 @@ week-12/imports/*
 week-12/data-sources/
 week-12/data-sources/*
 
-week-12/provisioners
-week-12/provisioners/*
-
 **/.infracost/*
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,visualstudiocode,python,terraform,venv,virtualenv

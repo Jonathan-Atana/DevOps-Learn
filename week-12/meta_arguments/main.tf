@@ -14,17 +14,17 @@ provider "aws" {
 
 variable "instance_types" {
   description = "Types for instances"
-  type = list(string)
+  type = set(string)
   default = [ "t2.micro", "t3.small" ]
 }
 
 resource "aws_instance" "main" {
-  for_each = toset(var.instance_types)
+  for_each = var.instance_types
 
   ami = "ami-0e58b56aa4d64231b"
   instance_type = each.key
 
-  tags = {
-    Name = "dev-${count.index}"
+  lifecycle {
+    create_before_destroy = true
   }
 }
