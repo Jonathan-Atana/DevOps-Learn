@@ -2,7 +2,7 @@
 
 ## Overview
 
-This Terraform root module provisions a scalable, secure, and highly available multi-tier application infrastructure on AWS. It leverages modular design for maintainability and reusability, following best practices for tagging, namespacing, monitoring, and private connectivity.
+This Terraform root module provisions a scalable, secure, and highly available multi-tier application infrastructure on AWS. It uses modular design for maintainability, following best practices for tagging, namespacing, monitoring, and private connectivity.
 
 **Key Features:**
 
@@ -11,6 +11,7 @@ This Terraform root module provisions a scalable, secure, and highly available m
 - Monitoring and alerting with CloudWatch and SNS
 - Private connectivity via VPC endpoints
 - Secure, least-privilege IAM roles
+- User data bootstrapping for EC2/app via `templates/user-data.sh`
 
 ---
 
@@ -20,26 +21,27 @@ See `architecture.drawio` for a visual representation of the deployed architectu
 
 ---
 
-## Module Structure
+## Project Structure
 
 - `main.tf` — Root orchestration, module wiring
-- `variables.tf` — Input variables (environment, namespace, etc.)
+- `variables.tf` — Input variables (region, environment, namespace, etc.)
 - `outputs.tf` — Root outputs
 - `terraform.tfvars` — Example variable values
 - `modules/` — All submodules (see below)
+- `templates/user-data.sh` — User data script for EC2/app bootstrapping
 
 ### Included Modules
 
-- `app_asg` — Application Auto Scaling Group
-- `cloudwatch` — CloudWatch alarms, metrics, log groups
-- `ec2` — Bastion host(s)
-- `elb` — Elastic Load Balancer
-- `iam_role` — IAM roles and policies
-- `rds` — Relational Database Service
-- `s3` — S3 buckets (app, logs, etc.)
-- `security_group` — Security groups for all tiers
-- `sns` — SNS topics for alerting
-- `vpc_endpoint` — VPC endpoints for private AWS service access
+- `app_asg` — Application Auto Scaling Group (ASG) and Launch Template
+- `cloudwatch` — CloudWatch alarms for EC2/ASG, group and instance metrics
+- `ec2` — Bastion host(s) for secure admin access
+- `elb` — Application Load Balancer (ALB) and target group
+- `iam_role` — IAM roles and policies for EC2, S3, CloudWatch
+- `rds` — RDS (database cluster, Multi-AZ)
+- `s3` — S3 bucket for app data/logs, with VPC endpoint support
+- `security_group` — Security groups for all tiers (bastion, app, db, alb)
+- `sns` — SNS topics and subscriptions for alerting
+- `vpc_endpoint` — VPC endpoints for S3 and private AWS service access
 
 ---
 
@@ -54,11 +56,14 @@ See `architecture.drawio` for a visual representation of the deployed architectu
 
 ## Input Variables
 
-| Name        | Description                       | Type   | Example |
-| ----------- | --------------------------------- | ------ | ------- |
-| environment | Deployment environment (dev/prod) | string | "dev"   |
-| namespace   | Project or team namespace         | string | "myapp" |
-| ...         | Module-specific variables         |        |         |
+| Name        | Description                       | Type   | Example        |
+| ----------- | --------------------------------- | ------ | -------------- |
+| aws_region  | AWS region to deploy in           | string | "us-east-1"    |
+| env         | Deployment environment (dev/prod) | string | "dev"          |
+| namespace   | Project or team namespace         | string | "myapp"        |
+| bucket_name | Name of the S3 bucket             | string | "myapp-bucket" |
+| app_port    | Application port                  | number | 8080           |
+| ...         | Module-specific variables         |        |                |
 
 See `variables.tf` and each module's README for details.
 
@@ -66,24 +71,25 @@ See `variables.tf` and each module's README for details.
 
 ## Outputs
 
-- All key resource IDs, ARNs, endpoints, and connection details are output for integration and reference.
-- See `outputs.tf` and each module's README for specifics.
+- `alb_dns_name`: DNS name of the Application Load Balancer
+- Other key resource IDs, ARNs, endpoints, and connection details are output for integration and reference
+- See `outputs.tf` and each module's README for specifics
 
 ---
 
 ## Tagging & Namespacing
 
-- All resources are tagged with `environment`, `namespace`, and standard tags via provider `default_tags`.
-- Ensures cost allocation, traceability, and resource hygiene.
+- All resources are tagged with `env`, `namespace`, and standard tags via provider `default_tags`
+- Ensures cost allocation, traceability, and resource hygiene
 
 ---
 
 ## Monitoring & Alerting
 
-- **CloudWatch**: Alarms for EC2, RDS, ELB, etc.
-- **SNS**: Notification topics for alerting (e.g., email, SMS)
+- **CloudWatch**: Alarms for EC2, ASG (group-level), RDS, ELB, etc.
+- **SNS**: Notification topics for alerting (e.g., email)
 - **CloudWatch Logs**: Optional log group/stream integration for EC2/app logs
-- See `modules/cloudwatch/README.md` for advanced monitoring setup.
+- See `modules/cloudwatch/README.md` for advanced monitoring setup
 
 ---
 
@@ -101,6 +107,12 @@ See `variables.tf` and each module's README for details.
 
 - VPC endpoints (S3, DynamoDB, CloudWatch, SNS) for private, secure AWS API access
 - See `modules/vpc_endpoint/README.md` for details
+
+---
+
+## Templates
+
+- `templates/user-data.sh`: Used to bootstrap EC2/app instances (e.g., install Apache, set up app port)
 
 ---
 
