@@ -17,7 +17,7 @@ This Terraform root module provisions a scalable, secure, and highly available m
 
 ## Architecture Diagram
 
-See `architecture.drawio` for a visual representation of the deployed architecture.
+![Architecture Diagram](architecture.jpg)
 
 ---
 
